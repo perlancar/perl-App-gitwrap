@@ -56,6 +56,7 @@ sub run_cmd_template {
     $cmd =~ s/%\{(\w+)\}/defined($tvars{$1}) ? $tvars{$1} : "%{$1}"/eg;
 
     chdir $Repo_Dir if defined($Repo_Dir);
+    say "D2:cmd=<$cmd>";
     system $cmd;
     chdir $Cwd if defined($Repo_Dir);
 }
@@ -64,7 +65,7 @@ sub do_stuffs {
     if ($Config->{GLOBAL}{before_commit_cmdt} && @ARGV && $ARGV[0] eq 'commit') {
         run_cmd_template($Config->{GLOBAL}{before_commit_cmdt});
     }
-    if ($Config->{GLOBAL}{before_commit_cmdt} && @ARGV && $ARGV[0] eq 'status') {
+    if ($Config->{GLOBAL}{before_status_cmdt} && @ARGV && $ARGV[0] eq 'status') {
         run_cmd_template($Config->{GLOBAL}{before_status_cmdt});
     }
 }
@@ -81,7 +82,6 @@ read_config;
 do_stuffs;
 exec_git;
 
-__END__
 # ABSTRACT: Git wrapper script
 # PODNAME:
 
@@ -112,6 +112,31 @@ locations: F<~/.config>, F<~>, or F</etc>. See L</"CONFIGURATION">.
 
 It will then use the git binary as specified in the configuration C<git_path> or
 just use C<git>.
+
+Some examples of how I use this script:
+
+=over
+
+=item * Fixing user and email before commit
+
+Doing this in C<pre-commit> hook is too late as C<git> already decides the
+user/email, so if you use C<pre-commit> hook for this the best you can do is fix
+user/email then exit non-zero so the commit is aborted. Then you commit again.
+
+With this wrapper, this extra step is unnecessary.
+
+=item * Touching last commit/status timestamp
+
+I updated a record in a database whenever a repository is committed into or
+status-ed. The first can be done with a C<post-commit> hook, but for the second
+there is no hook provided by git. I do this to speed up or prioritize
+repositories that are more recently modified/accessed in L<Git::Bunch>: When
+there are hundreds/thousand+ git repositories in a gitbunch, and only a few of
+them need to be synchronized, using these timestamps can dramatically shorten
+the amount of time to determine which repositories need to be included, because
+we avoid having to 'git status' every single repository.
+
+=back
 
 
 =head1 CONFIGURATION
