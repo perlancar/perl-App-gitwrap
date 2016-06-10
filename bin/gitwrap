@@ -1,0 +1,128 @@
+#!perl
+
+# DATE
+# VERSION
+
+use 5.010001;
+use strict;
+use warnings;
+
+my $Config;
+my ($Cwd, $Repo_Dir, $Repo_Name);
+
+sub read_config {
+    #require PERLANCAR::File::HomeDir;
+
+    for my $dir ("$ENV{HOME}/.config", $ENV{HOME}, "/etc") {
+        my $file = "$dir/gitwrap.conf";
+        if (-f $file) {
+            require Config::IOD::Reader;
+            $Config = Config::IOD::Reader->new->read_file($file);
+            return;
+        }
+    }
+    $Config = {};
+}
+
+sub run_cmd_template {
+    require Cwd;
+
+    my ($cmdt) = @_;
+
+    unless ($Cwd) {
+        $Cwd = Cwd::getcwd();
+
+      FIND_REPO_TOP_LEVEL_DIR:
+        {
+            my $cwd = $Cwd;
+            while (1) {
+                if (-d ".git") {
+                    $Repo_Dir = $cwd;
+                    ($Repo_Name = $Repo_Dir) =~ s!.+/!!;
+                    last;
+                }
+                chdir ".." or last;
+                $cwd =~ s!(.+)/.+!$1! or last;
+            }
+        }
+    }
+
+    my %tvars;
+    my %env;
+    $tvars{REPO_NAME} = $Repo_Name;
+    $env{GIT_REPO_NAME} = $Repo_Name;
+
+    my $cmd = $cmdt;
+    $cmd =~ s/%\{(\w+)\}/defined($tvars{$1}) ? $tvars{$1} : "%{$1}"/eg;
+
+    chdir $Repo_Dir if defined($Repo_Dir);
+    system $cmd;
+    chdir $Cwd if defined($Repo_Dir);
+}
+
+sub do_stuffs {
+    if ($Config->{GLOBAL}{before_commit_cmdt} && @ARGV && $ARGV[0] eq 'commit') {
+        run_cmd_template($Config->{GLOBAL}{before_commit_cmdt});
+    }
+    if ($Config->{GLOBAL}{before_commit_cmdt} && @ARGV && $ARGV[0] eq 'status') {
+        run_cmd_template($Config->{GLOBAL}{before_status_cmdt});
+    }
+}
+
+
+sub exec_git {
+    my @cmd = ($Config->{GLOBAL}{git_path} // 'git', @ARGV);
+    exec {$cmd[0]} @cmd;
+}
+
+### main
+
+read_config;
+do_stuffs;
+exec_git;
+
+__END__
+# ABSTRACT: Git wrapper script
+# PODNAME:
+
+=head1 SYNOPSIS
+
+Use like you would C<git>:
+
+ % gitwrap commit -m ...
+ ...
+
+To use the name C<git>, in your Unix shell:
+
+ alias git=gitwrap
+
+then this will call C<gitwrap> instead.
+
+ % git commit -m ...
+ ...
+
+
+=head1 DESCRIPTION
+
+C<gitwrap> is a script that will eventually exec() the C<git> binary. But before
+it does that, it can do some things first.
+
+It will first search for configuration file F<gitwrap.conf> in one of these
+locations: F<~/.config>, F<~>, or F</etc>. See L</"CONFIGURATION">.
+
+It will then use the git binary as specified in the configuration C<git_path> or
+just use C<git>.
+
+
+=head1 CONFIGURATION
+
+=head2 git_path
+
+=head2 before_commit_cmd_template
+
+=head2 before_status_cmd_template
+
+
+=head1 SEE ALSO
+
+C<git>
