@@ -24,7 +24,7 @@ sub read_config {
     $Config = {};
 }
 
-sub run_cmd_template {
+sub run_cmd {
     require Cwd;
     require IPC::System::Options;
 
@@ -58,10 +58,10 @@ sub run_cmd_template {
 
 sub do_stuffs {
     if ($Config->{GLOBAL}{before_commit_cmd} && @ARGV && $ARGV[0] eq 'commit') {
-        run_cmd_template($Config->{GLOBAL}{before_commit_cmd});
+        run_cmd($Config->{GLOBAL}{before_commit_cmd});
     }
     if ($Config->{GLOBAL}{before_status_cmd} && @ARGV && $ARGV[0] eq 'status') {
-        run_cmd_template($Config->{GLOBAL}{before_status_cmd});
+        run_cmd($Config->{GLOBAL}{before_status_cmd});
     }
 }
 
@@ -139,9 +139,9 @@ we avoid having to 'git status' every single repository.
 
 =head2 git_path
 
-=head2 before_commit_cmd_template
+=head2 before_commit_cmd
 
-=head2 before_status_cmd_template
+=head2 before_status_cmd
 
 
 =head1 SEE ALSO
