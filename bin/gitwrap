@@ -26,8 +26,9 @@ sub read_config {
 
 sub run_cmd_template {
     require Cwd;
+    require IPC::System::Options;
 
-    my ($cmdt) = @_;
+    my ($cmd) = @_;
 
     unless ($Cwd) {
         $Cwd = Cwd::getcwd();
@@ -47,26 +48,20 @@ sub run_cmd_template {
         }
     }
 
-    my %tvars;
     my %env;
-    $tvars{REPO_NAME} = $Repo_Name;
     $env{GIT_REPO_NAME} = $Repo_Name;
 
-    my $cmd = $cmdt;
-    $cmd =~ s/%\{(\w+)\}/defined($tvars{$1}) ? $tvars{$1} : "%{$1}"/eg;
-
     chdir $Repo_Dir if defined($Repo_Dir);
-    say "D2:cmd=<$cmd>";
-    system $cmd;
+    IPC::System::Options::system({env=>\%env}, $cmd);
     chdir $Cwd if defined($Repo_Dir);
 }
 
 sub do_stuffs {
-    if ($Config->{GLOBAL}{before_commit_cmdt} && @ARGV && $ARGV[0] eq 'commit') {
-        run_cmd_template($Config->{GLOBAL}{before_commit_cmdt});
+    if ($Config->{GLOBAL}{before_commit_cmd} && @ARGV && $ARGV[0] eq 'commit') {
+        run_cmd_template($Config->{GLOBAL}{before_commit_cmd});
     }
-    if ($Config->{GLOBAL}{before_status_cmdt} && @ARGV && $ARGV[0] eq 'status') {
-        run_cmd_template($Config->{GLOBAL}{before_status_cmdt});
+    if ($Config->{GLOBAL}{before_status_cmd} && @ARGV && $ARGV[0] eq 'status') {
+        run_cmd_template($Config->{GLOBAL}{before_status_cmd});
     }
 }
 
@@ -108,16 +103,17 @@ C<gitwrap> is a script that will eventually exec() the C<git> binary. But before
 it does that, it can do some things first.
 
 It will first search for configuration file F<gitwrap.conf> in one of these
-locations: F<~/.config>, F<~>, or F</etc>. See L</"CONFIGURATION">.
+locations: F<~/.config>, F<~>, or F</etc>. It then will execute various commands
+as described in the configuration. See L</"CONFIGURATION">.
 
-It will then use the git binary as specified in the configuration C<git_path> or
-just use C<git>.
+It will then call the git binary as specified in the configuration C<git_path>
+or just use C<git>.
 
 Some examples of how I use this script:
 
 =over
 
-=item * Fixing user and email before commit
+=item * Fix user and email before commit
 
 Doing this in C<pre-commit> hook is too late as C<git> already decides the
 user/email, so if you use C<pre-commit> hook for this the best you can do is fix
@@ -125,7 +121,7 @@ user/email then exit non-zero so the commit is aborted. Then you commit again.
 
 With this wrapper, this extra step is unnecessary.
 
-=item * Touching last commit/status timestamp
+=item * Touch last commit/status timestamp
 
 I updated a record in a database whenever a repository is committed into or
 status-ed. The first can be done with a C<post-commit> hook, but for the second
