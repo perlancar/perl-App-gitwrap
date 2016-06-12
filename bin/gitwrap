@@ -113,17 +113,34 @@ Some examples of how I use this script:
 
 =over
 
-=item * Fix user and email before commit
+=item * Fix user and email dynamically before commit
+
+Suppose that instead of putting the user/email manually on each C<.git/config>,
+you want to set/fix user and email dynamically using a set of rules right before
+commit.
 
 Doing this in C<pre-commit> hook is too late as C<git> already decides the
 user/email, so if you use C<pre-commit> hook for this the best you can do is fix
 user/email then exit non-zero so the commit is aborted. Then you commit again.
 
-With this wrapper, this extra step is unnecessary.
+With this wrapper, this extra step is unnecessary. You can set
+C<before_commit_cmd> in F<gitwrap.conf> to the command necessary to munge the
+user/email in C<.git/config>, for example:
+
+ before_commit_cmd = perl -e'($user, $email) = ...; system "git", "config", "user.name", $user; system "git", "config", "user.email", $email'
+
+or, if you already have a C<pre-commit> hook that does this, you can call the
+pre-commit hook instead.
+
+ before_commit_cmd = .git/hooks/pre-commit
+
+The difference is that even if the hook exits non-zero, gitwrap will continue
+executing git (but if the hook fails again during actual pre-commit phase in
+git, the commit will be aborted).
 
 =item * Touch last commit/status timestamp
 
-I updated a record in a database whenever a repository is committed into or
+I update a record in a database whenever a repository is committed into or
 status-ed. The first can be done with a C<post-commit> hook, but for the second
 there is no hook provided by git. I do this to speed up or prioritize
 repositories that are more recently modified/accessed in L<Git::Bunch>: When
@@ -131,6 +148,13 @@ there are hundreds/thousand+ git repositories in a gitbunch, and only a few of
 them need to be synchronized, using these timestamps can dramatically shorten
 the amount of time to determine which repositories need to be included, because
 we avoid having to 'git status' every single repository.
+
+To do this, in F<gitwrap.conf>:
+
+ before_commit_cmd = reposdb touch-commit-time
+ before_status_cmd = reposdb touch-status-time
+
+Note: see also L<reposdb>.
 
 =back
 
