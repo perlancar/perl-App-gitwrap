@@ -151,8 +151,8 @@ we avoid having to 'git status' every single repository.
 
 To do this, in F<gitwrap.conf>:
 
- before_commit_cmd = reposdb touch-commit-time
- before_status_cmd = reposdb touch-status-time
+ before_commit_cmd = reposdb touch --commit-time
+ before_status_cmd = reposdb touch --status-time
 
 Note: see also L<reposdb>.
 
