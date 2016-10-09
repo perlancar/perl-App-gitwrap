@@ -156,6 +156,14 @@ To do this, in F<gitwrap.conf>:
 
 Note: see also L<reposdb>.
 
+=item * Setup hooks
+
+Sometimes I copy repositories to other computers simply by using C<cp> or
+C<rsync>. I also have scripts in C<.git/hooks/> directory inside the repository
+as symlinks to the actual scripts. When copying to other computers, the paths
+are not exactly alike so the symlinks get broken. We can use
+C<before_commit_cmd> or other C<before*cmd> to correct these symlinks first.
+
 =back
 
 
@@ -170,4 +178,4 @@ Note: see also L<reposdb>.
 
 =head1 SEE ALSO
 
-C<git>
+L<git>

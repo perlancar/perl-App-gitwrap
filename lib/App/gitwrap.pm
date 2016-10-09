@@ -13,7 +13,7 @@ See the included script L<gitwrap>.
 
 =head1 SEE ALSO
 
-C<git> command
+L<git>
 
 L<Git::Wrapper> - similar name but this wraps the C<git> command so it can be
 used like a Perl library.
