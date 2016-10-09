@@ -1,5 +1,10 @@
 Revision history for App-gitwrap
 
+0.004   2016-10-09 (PERLANCAR)
+
+	- [doc] Add FAQ entry about string quote/comment in configuration.
+
+
 0.003   2016-10-09 (PERLANCAR)
 
         - Add logging (Log::Any::IfLOG).
