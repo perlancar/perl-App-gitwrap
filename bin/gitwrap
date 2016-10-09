@@ -198,6 +198,47 @@ Command to run before C<git status>. Can be specified multiple times. Will abort
 execution if any of the commands fails.
 
 
+=head1 FAQ
+
+=head2 Truncated command?
+
+I put this configuration:
+
+ before_commit_cmd = perl -e'foo; bar; if ($baz eq "qux") { ... }'
+
+but when I run git, I get:
+
+ sh: 1: Syntax error: Unterminated quoted string
+ system(perl -e'foo) failed: 512 (exited with code 2) at ...
+
+Why is the command truncated?
+
+Answer: the configuration (in L<IOD> format) regards semicolon (C<;>) and hash
+character (C<#>) as a comment starter, including after the parameter value. To
+see quickly how a configuration file gets loaded, you can use L<dump-iod>
+utility which will display the configuration as JSON data, e.g.:
+
+ % dump-iod ~/gitwrap.conf
+ {
+   "GLOBAL" : {
+     "before_commit_cmd" : "perl -e'foo"
+   }
+ }
+
+To prevent this, you can use JSON string: you quote the whole parameter value in
+a double quote (and escape the double quotes inside with bacslashes). Example:
+
+ before_commit_cmd = "perl -e'foo; bar; if ($baz eq \"qux\") { ... }'"
+
+So now your configuration will become (in JSON):
+
+ {
+    "GLOBAL" : {
+      "before_commit_cmd" : "perl -e'foo; bar; if ($baz eq \"qux\") { ... }'"
+    }
+ }
+
+
 =head1 SEE ALSO
 
 L<git>
