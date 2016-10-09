@@ -6,6 +6,7 @@
 use 5.010001;
 use strict;
 use warnings;
+use Log::Any::IfLOG '$log';
 
 my $Config;
 my ($Cwd, $Repo_Dir, $Repo_Name);
@@ -24,11 +25,11 @@ sub read_config {
     $Config = {};
 }
 
-sub run_cmd {
+sub run_cmds {
     require Cwd;
     require IPC::System::Options;
 
-    my ($cmd) = @_;
+    my ($cmds) = @_;
 
     unless ($Cwd) {
         $Cwd = Cwd::getcwd();
@@ -52,27 +53,42 @@ sub run_cmd {
     $env{GIT_REPO_NAME} = $Repo_Name;
 
     chdir $Repo_Dir if defined($Repo_Dir);
-    IPC::System::Options::system({env=>\%env}, $cmd);
+    for my $cmd (@$cmds) {
+        IPC::System::Options::system({env=>\%env, log=>1, die=>1}, $cmd);
+    }
     chdir $Cwd if defined($Repo_Dir);
 }
 
 sub do_stuffs {
-    if ($Config->{GLOBAL}{before_commit_cmd} && @ARGV && $ARGV[0] eq 'commit') {
-        run_cmd($Config->{GLOBAL}{before_commit_cmd});
+    my $cmds;
+
+    $cmds = $Config->{GLOBAL}{before_commit_cmd};
+    $cmds = [$cmds] if defined $cmds && ref $cmds ne 'ARRAY';
+    if ($cmds && @ARGV && $ARGV[0] eq 'commit') {
+        $log->info(
+            "gitwrap: Running command(s) specified in before_commit_cmd");
+        run_cmds($cmds);
     }
-    if ($Config->{GLOBAL}{before_status_cmd} && @ARGV && $ARGV[0] eq 'status') {
-        run_cmd($Config->{GLOBAL}{before_status_cmd});
+
+    $cmds = $Config->{GLOBAL}{before_status_cmd};
+    $cmds = [$cmds] if defined $cmds && ref $cmds ne 'ARRAY';
+    if ($cmds && @ARGV && $ARGV[0] eq 'status') {
+        $log->info(
+            "gitwrap: Running command(s) specified in before_status_cmd");
+        run_cmds($cmds);
     }
 }
 
 
 sub exec_git {
     my @cmd = ($Config->{GLOBAL}{git_path} // 'git', @ARGV);
+    $log->infof("gitwrap: Executing git: %s", \@cmd);
     exec {$cmd[0]} @cmd;
 }
 
 ### main
 
+$log->info("gitwrap: start");
 read_config;
 do_stuffs;
 exec_git;
@@ -173,7 +189,13 @@ C<before_commit_cmd> or other C<before*cmd> to correct these symlinks first.
 
 =head2 before_commit_cmd
 
+Command to run before C<git commit>. Can be specified multiple times. Will abort
+execution if any of the commands fails.
+
 =head2 before_status_cmd
+
+Command to run before C<git status>. Can be specified multiple times. Will abort
+execution if any of the commands fails.
 
 
 =head1 SEE ALSO
