@@ -148,11 +148,11 @@ user/email in C<.git/config>, for example:
 or, if you already have a C<pre-commit> hook that does this, you can call the
 pre-commit hook instead.
 
- before_commit_cmd = .git/hooks/pre-commit
+ before_commit_cmd = ".git/hooks/pre-commit; exit 0"
 
 The difference is that even if the hook exits non-zero, gitwrap will continue
-executing git (but if the hook fails again during actual pre-commit phase in
-git, the commit will be aborted).
+executing git (due to C<exit 0> clause). But if the hook fails again during
+actual pre-commit phase in git, the commit will be aborted.
 
 =item * Touch last commit/status timestamp
 
@@ -237,6 +237,19 @@ So now your configuration will become (in JSON):
       "before_commit_cmd" : "perl -e'foo; bar; if ($baz eq \"qux\") { ... }'"
     }
  }
+
+=head2 Continuing after error?
+
+I want to execute a command in C<before_commit_cmd> (or C<before_status_cmd>,
+etc) but I want to continue even though the command exits with a non-zero
+status. How do I do that?
+
+Answer:
+
+ before_commit_cmd = "your-command; exit 0"
+
+Remember to quote the parameter value with a double quote (see previous FAQ
+entry for more details).
 
 
 =head1 SEE ALSO
