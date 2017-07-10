@@ -6,7 +6,7 @@
 use 5.010001;
 use strict;
 use warnings;
-use Log::Any::IfLOG '$log';
+use Log::ger;
 
 my $Config;
 my ($Cwd, $Repo_Dir, $Repo_Name);
@@ -65,7 +65,7 @@ sub do_stuffs {
     $cmds = $Config->{GLOBAL}{before_commit_cmd};
     $cmds = [$cmds] if defined $cmds && ref $cmds ne 'ARRAY';
     if ($cmds && @ARGV && $ARGV[0] eq 'commit') {
-        $log->info(
+        log_info(
             "gitwrap: Running command(s) specified in before_commit_cmd");
         run_cmds($cmds);
     }
@@ -73,7 +73,7 @@ sub do_stuffs {
     $cmds = $Config->{GLOBAL}{before_status_cmd};
     $cmds = [$cmds] if defined $cmds && ref $cmds ne 'ARRAY';
     if ($cmds && @ARGV && $ARGV[0] eq 'status') {
-        $log->info(
+        log_info(
             "gitwrap: Running command(s) specified in before_status_cmd");
         run_cmds($cmds);
     }
@@ -82,13 +82,13 @@ sub do_stuffs {
 
 sub exec_git {
     my @cmd = ($Config->{GLOBAL}{git_path} // 'git', @ARGV);
-    $log->infof("gitwrap: Executing git: %s", \@cmd);
+    log_info("gitwrap: Executing git: %s", \@cmd);
     exec {$cmd[0]} @cmd;
 }
 
 ### main
 
-$log->info("gitwrap: start");
+log_info("gitwrap: start");
 read_config;
 do_stuffs;
 exec_git;
