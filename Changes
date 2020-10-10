@@ -1,3 +1,9 @@
+0.007   2020-10-10  Released-By: PERLANCAR; Urgency: medium
+
+	- Can now do stuffs after git command too, introducing
+	  after_{commit,status,pull}_cmd configurations.
+
+
 0.006   2017-07-10  Released-By: PERLANCAR
 
 	- No functional changes.
