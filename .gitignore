@@ -2,3 +2,4 @@ App-gitwrap-*
 .build
 *~
 nytprof*
+.DS_Store
